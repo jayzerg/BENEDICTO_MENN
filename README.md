@@ -62,6 +62,22 @@ A comprehensive exam management system built with Next.js, MongoDB, and Tailwind
 - `npm run start` - Runs the built app in production mode
 - `npm run lint` - Runs the linter
 
+## Automatic Deployment
+
+This project is configured with GitHub Actions for automatic deployment. Any changes pushed to the `main` branch will automatically trigger a build and deployment process.
+
+The workflow is defined in `.github/workflows/deploy.yml` and includes:
+- Automatic dependency installation
+- Code linting
+- Production build
+- Deployment to GitHub Pages
+
+To enable automatic deployment:
+1. Push your code to GitHub
+2. Go to your repository settings
+3. Under "Pages", select "GitHub Actions" as the source
+4. The deployment will automatically run on every push to the main branch
+
 ## Project Structure
 
 ```
