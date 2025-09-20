@@ -78,6 +78,23 @@ To enable automatic deployment:
 3. Under "Pages", select "GitHub Actions" as the source
 4. The deployment will automatically run on every push to the main branch
 
+## Automatic Local Syncing
+
+To automatically push changes from your local machine to GitHub, you can use one of the provided scripts:
+
+### Option 1: Periodic Check Script
+- Run `auto-push.bat` to automatically check for changes every 5 minutes and push to GitHub
+- Customizable interval by editing the script
+
+### Option 2: File Watcher Script (Recommended)
+- Run `watch-and-push.bat` to watch for file changes and immediately push to GitHub
+- More efficient as it responds to changes in real-time
+
+Both scripts will:
+- Automatically detect file changes in your project
+- Commit changes with a timestamped message
+- Push to the main branch of your GitHub repository
+
 ## Project Structure
 
 ```
