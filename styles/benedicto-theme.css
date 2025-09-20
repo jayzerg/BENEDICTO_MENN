@@ -1,0 +1,110 @@
+/* Benedicto College Theme - Blue, Orange, White */
+
+:root {
+  --bc-blue-primary: #1e40af;
+  --bc-blue-secondary: #3b82f6;
+  --bc-blue-light: #dbeafe;
+  --bc-orange-primary: #ea580c;
+  --bc-orange-secondary: #f97316;
+  --bc-orange-light: #fed7aa;
+  --bc-white: #ffffff;
+  --bc-gray-light: #f8fafc;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bc-gray-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--bc-blue-primary), var(--bc-orange-primary));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--bc-blue-secondary), var(--bc-orange-secondary));
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Custom gradient backgrounds */
+.bg-bc-gradient {
+  background: linear-gradient(135deg, var(--bc-blue-primary) 0%, var(--bc-orange-primary) 100%);
+}
+
+.bg-bc-gradient-light {
+  background: linear-gradient(135deg, var(--bc-blue-light) 0%, var(--bc-orange-light) 100%);
+}
+
+/* Custom button styles */
+.btn-bc-primary {
+  background: linear-gradient(135deg, var(--bc-blue-primary) 0%, var(--bc-blue-secondary) 100%);
+  color: var(--bc-white);
+  transition: all 0.3s ease;
+}
+
+.btn-bc-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(30, 64, 175, 0.3);
+}
+
+.btn-bc-secondary {
+  background: linear-gradient(135deg, var(--bc-orange-primary) 0%, var(--bc-orange-secondary) 100%);
+  color: var(--bc-white);
+  transition: all 0.3s ease;
+}
+
+.btn-bc-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(234, 88, 12, 0.3);
+}
+
+/* Card hover effects */
+.card-bc {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(30, 64, 175, 0.1);
+}
+
+.card-bc:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(30, 64, 175, 0.15);
+}
+
+/* Table enhancements */
+.table-bc tbody tr:hover {
+  background: linear-gradient(90deg, var(--bc-blue-light) 0%, var(--bc-orange-light) 100%);
+  transition: all 0.2s ease;
+}
+
+/* Loading spinner */
+.spinner-bc {
+  border: 3px solid var(--bc-blue-light);
+  border-top: 3px solid var(--bc-blue-primary);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
