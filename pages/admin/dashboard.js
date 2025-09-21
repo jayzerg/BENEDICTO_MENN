@@ -1343,163 +1343,83 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                const teacher = teachers.find(t => t._id === teacherId);
-                                if (teacher) {
-                                  setEditingId(teacherId);
-                                  setEditForm({ name: teacher.name, facultyId: teacher.facultyId });
-                                  setShowDraftsModal(false);
-                                }
-                              }}
-                              className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
-                            >
-                              Apply
-                            </button>
-                            <button
-                              onClick={() => {
-                                const newDrafts = { ...drafts };
-                                delete newDrafts[teacherId];
-                                setDrafts(newDrafts);
-                              }}
-                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )
-            ) : (
-              Object.keys(grades).length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-gray-400 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-600">No grades saved yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {Object.entries(grades).map(([key, gradeData]) => {
-                    const [studentId, subjectId] = key.split('-');
-                    const student = teacherStudents.find(s => s._id === studentId);
-                    const teacher = teachers.find(t => t._id === subjectId);
-                    return (
-                      <div key={key} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium text-gray-900">
-                              {student ? `${student.firstName} ${student.lastName}` : 'Unknown Student'}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              Teacher: {teacher ? teacher.name : 'Unknown Teacher'}
-                            </p>
-                            <div className="mt-2">
-                              <span className="font-medium text-gray-700">Grade:</span>
-                              <span className="text-gray-600 ml-2">{gradeData.grade}</span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-2">
-                              Last saved: {gradeData.lastSaved ? new Date(gradeData.lastSaved).toLocaleString() : 'Unknown'}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                // Apply grade logic would go here
-                              }}
-                              className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
-                            >
-                              Apply
-                            </button>
-                            <button
-                              onClick={() => {
-                                const newGrades = { ...grades };
-                                delete newGrades[key];
-                                setGrades(newGrades);
-                              }}
-                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )
-            )}
-            
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setShowDraftsModal(false)}
-                className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors shadow-md"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Subject View Modal */}
-      {showSubjectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                Subjects for {selectedTeacher?.firstName} {selectedTeacher?.lastName}
-              </h2>
-              <button
-                onClick={() => setShowSubjectModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold transition-colors"
-              >
-                &times;
-              </button>
-            </div>
-            
-            {/* Search bar for subjects */}
-            <div className="mb-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search subjects..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                />
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                ))}
+              </div>
+            )
+          )
+        ) : (
+          Object.keys(grades).length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
+              <p className="text-gray-600">No grades saved yet.</p>
             </div>
-            
-            {loadingSubjects ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-700"></div>
-                <p className="mt-2 text-gray-600">Loading subjects...</p>
-              </div>
-            ) : teacherSubjects.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-400 mb-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </div>
-                <p className="text-gray-600">No subjects assigned to this teacher.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(grades).map(([key, gradeData]) => {
+                const [studentId, subjectId] = key.split('-');
+                const student = teacherStudents.find(s => s._id === studentId);
+                const teacher = teachers.find(t => t._id === subjectId);
+                return (
+                  <div key={key} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-gray-900">
+                          {student ? `${student.firstName} ${student.lastName}` : 'Unknown Student'}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Teacher: {teacher ? teacher.name : 'Unknown Teacher'}
+                        </p>
+                        <div className="mt-2">
+                          <span className="font-medium text-gray-700">Grade:</span>
+                          <span className="text-gray-600 ml-2">{gradeData.grade}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Last saved: {gradeData.lastSaved ? new Date(gradeData.lastSaved).toLocaleString() : 'Unknown'}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            // Apply grade logic would go here
+                          }}
+                          className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                        >
+                          Apply
+                        </button>
+                        <button
+                          onClick={() => {
+                            const newGrades = { ...grades };
+                            delete newGrades[key];
+                            setGrades(newGrades);
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        )}
+        
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={() => setShowDraftsModal(false)}
+            className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors shadow-md"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Code</th>
