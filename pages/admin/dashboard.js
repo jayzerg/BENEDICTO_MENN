@@ -30,7 +30,6 @@ export default function AdminDashboard() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   // Performance indicators
   const [performanceStats, setPerformanceStats] = useState({
-    totalUsers: 0,
     activeTeachers: 0,
     activeStudents: 0,
     recentActivity: 0
@@ -96,7 +95,6 @@ export default function AdminDashboard() {
       const data = await response.json();
       
       // Calculate stats
-      const totalUsers = data.length;
       const activeTeachers = data.filter(user => user.role === 'teacher').length;
       const activeStudents = data.filter(user => user.role === 'student').length;
       // For recent activity, we'll count users created in the last 7 days
@@ -105,7 +103,6 @@ export default function AdminDashboard() {
       const recentActivity = data.filter(user => new Date(user.createdAt) >= weekAgo).length;
       
       setPerformanceStats({
-        totalUsers,
         activeTeachers,
         activeStudents,
         recentActivity
@@ -1071,6 +1068,281 @@ export default function AdminDashboard() {
                             </div>
                             <p className="text-xs text-gray-500 mt-2">
                               Last saved: {draft.lastSaved ? new Date(draft.lastSaved).toLocaleString() : 'Unknown'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              // Implement draft deletion logic here
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              Object.keys(grades).length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600">No grades saved yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(grades).map(([key, grade]) => {
+                    const [studentId, subjectId] = key.split('-');
+                    const student = teacherStudents.find(s => s._id === studentId);
+                    const subject = teacherSubjects.find(s => s._id === subjectId);
+                    return (
+                      <div key={key} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{student?.name || 'Unknown Student'}</h3>
+                            <div className="mt-2 space-y-1">
+                              <div className="text-sm">
+                                <span className="font-medium text-gray-700">Subject:</span>
+                                <span className="text-gray-600 ml-2">{subject?.subjectName || 'Unknown Subject'}</span>
+                              </div>
+                              <div className="text-sm">
+                                <span className="font-medium text-gray-700">Grade:</span>
+                                <span className="text-gray-600 ml-2">{grade.grade}</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Last saved: {grade.lastSaved ? new Date(grade.lastSaved).toLocaleString() : 'Unknown'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              // Implement grade deletion logic here
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Subject Modal */}
+      {showSubjectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Subjects for {selectedTeacher?.name || 'Unknown Teacher'}</h2>
+              <button
+                onClick={() => setShowSubjectModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="border-b border-gray-200 mb-4">
+              <nav className="flex space-x-8">
+                <button
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'subjects'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('subjects')}
+                >
+                  Subjects ({teacherSubjects.length})
+                </button>
+                <button
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'add-subject'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('add-subject')}
+                >
+                  Add Subject
+                </button>
+              </nav>
+            </div>
+            
+            {activeTab === 'subjects' ? (
+              teacherSubjects.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600">No subjects found for this teacher.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {teacherSubjects.map(subject => (
+                    <div key={subject._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-gray-900">{subject.subjectName}</h3>
+                          <div className="mt-2 space-y-1">
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-700">Subject Code:</span>
+                              <span className="text-gray-600 ml-2">{subject.subjectCode}</span>
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-700">Course Level:</span>
+                              <span className="text-gray-600 ml-2">{subject.courseLevel}</span>
+                            </div>
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-700">Prerequisite:</span>
+                              <span className="text-gray-600 ml-2">{subject.prerequisite || 'None'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditSubject(subject)}
+                            className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSubject(subject._id)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">Subject Name</label>
+                  <input
+                    type="text"
+                    value={editSubjectForm.subjectName}
+                    onChange={(e) => setEditSubjectForm({...editSubjectForm, subjectName: e.target.value})}
+                    className="border rounded px-2 py-1 w-full shadow-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">Subject Code</label>
+                  <input
+                    type="text"
+                    value={editSubjectForm.subjectCode}
+                    onChange={(e) => setEditSubjectForm({...editSubjectForm, subjectCode: e.target.value})}
+                    className="border rounded px-2 py-1 w-full shadow-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">Course Level</label>
+                  <input
+                    type="text"
+                    value={editSubjectForm.courseLevel}
+                    onChange={(e) => setEditSubjectForm({...editSubjectForm, courseLevel: e.target.value})}
+                    className="border rounded px-2 py-1 w-full shadow-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-700">Prerequisite</label>
+                  <input
+                    type="text"
+                    value={editSubjectForm.prerequisite}
+                    onChange={(e) => setEditSubjectForm({...editSubjectForm, prerequisite: e.target.value})}
+                    className="border rounded px-2 py-1 w-full shadow-sm"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => handleUpdateSubject(editSubjectForm._id)}
+                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                  >
+                    Save Subject
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Student Modal */}
+      {showStudentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Students for {selectedTeacher?.name || 'Unknown Teacher'}</h2>
+              <button
+                onClick={() => setShowStudentModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="border-b border-gray-200 mb-4">
+              <nav className="flex space-x-8">
+                <button
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'students'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('students')}
+                >
+                  Students ({teacherStudents.length})
+                </button>
+              </nav>
+            </div>
+            
+            {teacherStudents.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-gray-600">No students found for this teacher.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {teacherStudents.map(student => (
+                  <div key={student._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{student.name}</h3>
+                        <div className="mt-2 space-y-1">
+                          <div className="text-sm">
+                            <span className="font-medium text-gray-700">Email:</span>
+                            <span className="text-gray-600 ml-2">{student.email}</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium text-gray-700">Enrolled Subjects:</span>
+                            <span className="text-gray-600 ml-2">
+                              {student.enrolledSubjects?.map(subjectId => {
+                                const subject = teacherSubjects.find(s => s._id === subjectId);
+                                return subject ? subject.subjectName : 'Unknown Subject';
+                              }).join(', ') || 'None'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                             </p>
                           </div>
                           <div className="flex gap-2">
