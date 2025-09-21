@@ -35,6 +35,8 @@ export default function AdminDashboard() {
     activeStudents: 0,
     recentActivity: 0
   });
+  // User role and permissions
+  const [currentUser, setCurrentUser] = useState(null);
 
   const fetchTeachers = async () => {
     try {
@@ -77,6 +79,19 @@ export default function AdminDashboard() {
       });
     } catch (error) {
       console.error('Error fetching all users:', error);
+    }
+  };
+
+  // Fetch current user info
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const userData = await response.json();
+        setCurrentUser(userData);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
     }
   };
 
@@ -195,6 +210,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchTeachers();
     fetchAllUsers();
+    fetchCurrentUser();
     const interval = setInterval(() => {
       fetchTeachers();
       fetchAllUsers();
@@ -209,8 +225,13 @@ export default function AdminDashboard() {
   }, []);
 
   const handleEdit = (teacher) => {
-    setEditingId(teacher._id);
-    setEditForm({ name: teacher.name, facultyId: teacher.facultyId });
+    // Check if current user has permission to edit
+    if (currentUser && (currentUser.role === 'admin' || currentUser._id === teacher._id)) {
+      setEditingId(teacher._id);
+      setEditForm({ name: teacher.name, facultyId: teacher.facultyId });
+    } else {
+      alert('You do not have permission to edit this user.');
+    }
   };
 
   const handleUpdate = async (id) => {
@@ -223,34 +244,53 @@ export default function AdminDashboard() {
       if (response.ok) {
         setTeachers(teachers.map(t => t._id === id ? { ...t, ...editForm } : t));
         setEditingId(null);
+      } else {
+        const errorData = await response.json();
+        alert(`Error updating user: ${errorData.message}`);
       }
     } catch (error) {
       console.error('Error updating teacher:', error);
+      alert('Error updating user');
     }
   };
 
   const handleDelete = async (id) => {
-    try {
-      const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-      if (response.ok) {
-        setTeachers(teachers.filter(t => t._id !== id));
-        setShowDeleteModal(false);
-        setTeacherToDelete(null);
+    // Check if current user has permission to delete
+    const teacherToDelete = teachers.find(t => t._id === id);
+    if (currentUser && currentUser.role === 'admin') {
+      try {
+        const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          setTeachers(teachers.filter(t => t._id !== id));
+          setShowDeleteModal(false);
+          setTeacherToDelete(null);
+        } else {
+          const errorData = await response.json();
+          alert(`Error deleting user: ${errorData.message}`);
+        }
+      } catch (error) {
+        console.error('Error deleting teacher:', error);
+        alert('Error deleting user');
       }
-    } catch (error) {
-      console.error('Error deleting teacher:', error);
+    } else {
+      alert('You do not have permission to delete users.');
     }
   };
 
   // New function to handle subject editing
   const handleEditSubject = (subject) => {
-    setEditingSubjectId(subject._id);
-    setEditSubjectForm({
-      subjectName: subject.subjectName,
-      subjectCode: subject.subjectCode,
-      courseLevel: subject.courseLevel,
-      prerequisite: subject.prerequisite || ''
-    });
+    // Check if current user has permission to edit subjects
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'teacher')) {
+      setEditingSubjectId(subject._id);
+      setEditSubjectForm({
+        subjectName: subject.subjectName,
+        subjectCode: subject.subjectCode,
+        courseLevel: subject.courseLevel,
+        prerequisite: subject.prerequisite || ''
+      });
+    } else {
+      alert('You do not have permission to edit subjects.');
+    }
   };
 
   // New function to handle subject update
@@ -281,10 +321,15 @@ export default function AdminDashboard() {
 
   // New function to handle subject deletion
   const handleDeleteSubject = async (id) => {
-    // Find the subject to delete
-    const subject = teacherSubjects.find(s => s._id === id);
-    setSubjectToDelete(subject);
-    setShowSubjectDeleteModal(true);
+    // Check if current user has permission to delete subjects
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'teacher')) {
+      // Find the subject to delete
+      const subject = teacherSubjects.find(s => s._id === id);
+      setSubjectToDelete(subject);
+      setShowSubjectDeleteModal(true);
+    } else {
+      alert('You do not have permission to delete subjects.');
+    }
   };
 
   // New function to confirm subject deletion
@@ -391,6 +436,38 @@ export default function AdminDashboard() {
     if (value >= thresholds.good) return 'bg-green-500';
     if (value >= thresholds.warning) return 'bg-yellow-500';
     return 'bg-red-500';
+  };
+
+  // Check if current user has permission to perform an action
+  const hasPermission = (requiredRole) => {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    return currentUser.role === requiredRole;
+  };
+
+  // Get role badge with access control indicator
+  const getRoleBadge = (role) => {
+    const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
+    const roleClasses = {
+      teacher: "bg-blue-100 text-blue-800",
+      student: "bg-green-100 text-green-800",
+      admin: "bg-purple-100 text-purple-800"
+    };
+    
+    return (
+      <div className="flex items-center gap-1">
+        <span className={`${baseClasses} ${roleClasses[role] || 'bg-gray-100 text-gray-800'}`}>
+          {role}
+        </span>
+        {currentUser && currentUser.role === 'admin' && (
+          <span className="text-xs text-gray-500" title="Admin access">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -683,14 +760,7 @@ export default function AdminDashboard() {
                     ) : teacher.facultyId}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      teacher.role === 'teacher' ? 'bg-blue-100 text-blue-800' :
-                      teacher.role === 'student' ? 'bg-green-100 text-green-800' :
-                      teacher.role === 'admin' ? 'bg-purple-100 text-purple-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {teacher.role}
-                    </span>
+                    {getRoleBadge(teacher.role)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(teacher.createdAt).toLocaleDateString()}
@@ -716,6 +786,7 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => handleEdit(teacher)}
                           className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                          disabled={!hasPermission('admin') && currentUser?._id !== teacher._id}
                         >
                           Edit
                         </button>
@@ -737,6 +808,7 @@ export default function AdminDashboard() {
                             setShowDeleteModal(true);
                           }}
                           className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                          disabled={!hasPermission('admin')}
                         >
                           Delete
                         </button>
@@ -881,12 +953,14 @@ export default function AdminDashboard() {
                               <button
                                 onClick={() => handleEditSubject(subject)}
                                 className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                                disabled={!hasPermission('admin') && !hasPermission('teacher')}
                               >
                                 Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteSubject(subject._id)}
                                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                                disabled={!hasPermission('admin') && !hasPermission('teacher')}
                               >
                                 Delete
                               </button>
@@ -937,70 +1011,3 @@ export default function AdminDashboard() {
               <div className="text-center py-8">
                 <div className="text-gray-400 mb-2">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                    <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
-                  </svg>
-                </div>
-                <p className="text-gray-600">No students enrolled in this teacher's subjects.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Teacher</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {teacherStudents.map((student) => (
-                      <tr 
-                        key={student._id}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {student.firstName} {student.lastName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.facultyId || student.studentId}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.email}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {student.assignedTeacher?.name} ({student.assignedTeacher?.facultyId})
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setShowStudentModal(false)}
-                className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors shadow-md"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal for Subjects */}
-      {showSubjectDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-96 max-w-md shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-red-600">Confirm Delete</h2>
-              <button
-                onClick={() => {
-                  setShowSubjectDeleteModal(false);
-                  setSubjectToDelete(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2
