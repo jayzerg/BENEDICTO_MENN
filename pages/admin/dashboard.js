@@ -1359,7 +1359,7 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
-  )}
+  )
   
   {/* Student View Modal */}
   {showStudentModal && (
