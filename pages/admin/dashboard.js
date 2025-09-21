@@ -23,6 +23,9 @@ export default function AdminDashboard() {
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [teacherStudents, setTeacherStudents] = useState([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  // New state for filtering and sorting
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [roleFilter, setRoleFilter] = useState('all');
 
   const fetchTeachers = async () => {
     try {
@@ -262,9 +265,55 @@ export default function AdminDashboard() {
     }
   };
 
+  // Sorting function
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Apply sorting and filtering
+  const sortedAndFilteredTeachers = () => {
+    let filtered = teachers.filter(teacher => 
+      (!searchQuery || 
+        teacher.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        teacher.facultyId?.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (roleFilter === 'all' || teacher.role === roleFilter)
+    );
+
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return filtered;
+  };
+
+  // Get role counts for filter badges
+  const getRoleCounts = () => {
+    const counts = { all: teachers.length, teacher: 0, student: 0, admin: 0 };
+    teachers.forEach(teacher => {
+      if (counts[teacher.role] !== undefined) {
+        counts[teacher.role]++;
+      }
+    });
+    return counts;
+  };
+
+  const roleCounts = getRoleCounts();
+
   return (
     <AdminLayout>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500">
           <h3 className="text-lg font-semibold mb-2 text-green-500">Search Teachers</h3>
           <input
@@ -290,105 +339,208 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mt-8 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-          <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-700 to-blue-600">
-            <h3 className="text-lg font-semibold text-white">Teachers Management</h3>
-          </div>
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-blue-50 sticky top-0 z-10">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Faculty ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {teachers.filter(teacher => 
-                  !searchQuery || 
-                  teacher.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  teacher.facultyId?.toLowerCase().includes(searchQuery.toLowerCase())
-                ).map((teacher) => (
-                  <tr key={teacher._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
-                      {editingId === teacher._id ? (
-                        <input
-                          type="text"
-                          value={editForm.name}
-                          onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                          className="border rounded px-2 py-1 w-full"
-                        />
-                      ) : teacher.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {editingId === teacher._id ? (
-                        <input
-                          type="text"
-                          value={editForm.facultyId}
-                          onChange={(e) => setEditForm({...editForm, facultyId: e.target.value})}
-                          className="border rounded px-2 py-1 w-full"
-                        />
-                      ) : teacher.facultyId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{teacher.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(teacher.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {editingId === teacher._id ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleUpdate(teacher._id)}
-                            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs shadow-sm"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs shadow-sm"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(teacher)}
-                            className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => openSubjectModal(teacher)}
-                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs shadow-sm"
-                          >
-                            View Subject
-                          </button>
-                          <button
-                            onClick={() => openStudentModal(teacher)}
-                            className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-xs shadow-sm"
-                          >
-                            View Students
-                          </button>
-                          <button
-                            onClick={() => {
-                              setTeacherToDelete(teacher);
-                              setShowDeleteModal(true);
-                            }}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="px-6 py-4 border-b bg-gradient-to-r from-blue-700 to-blue-600 flex flex-col md:flex-row justify-between items-start md:items-center">
+          <h3 className="text-lg font-semibold text-white mb-2 md:mb-0">Teachers Management</h3>
+          
+          {/* Role Filter Badges */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setRoleFilter('all')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                roleFilter === 'all' 
+                  ? 'bg-white text-blue-700' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              All ({roleCounts.all})
+            </button>
+            <button
+              onClick={() => setRoleFilter('teacher')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                roleFilter === 'teacher' 
+                  ? 'bg-white text-blue-700' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              Teachers ({roleCounts.teacher})
+            </button>
+            <button
+              onClick={() => setRoleFilter('student')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                roleFilter === 'student' 
+                  ? 'bg-white text-blue-700' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              Students ({roleCounts.student})
+            </button>
+            <button
+              onClick={() => setRoleFilter('admin')}
+              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                roleFilter === 'admin' 
+                  ? 'bg-white text-blue-700' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              Admins ({roleCounts.admin})
+            </button>
           </div>
         </div>
+        
+        <div className="overflow-x-auto max-h-96 overflow-y-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-blue-50 sticky top-0 z-10">
+              <tr>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center">
+                    Name
+                    {sortConfig.key === 'name' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100"
+                  onClick={() => handleSort('facultyId')}
+                >
+                  <div className="flex items-center">
+                    Faculty ID
+                    {sortConfig.key === 'facultyId' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100"
+                  onClick={() => handleSort('role')}
+                >
+                  <div className="flex items-center">
+                    Role
+                    {sortConfig.key === 'role' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider cursor-pointer hover:bg-blue-100"
+                  onClick={() => handleSort('createdAt')}
+                >
+                  <div className="flex items-center">
+                    Created
+                    {sortConfig.key === 'createdAt' && (
+                      <span className="ml-1">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {sortedAndFilteredTeachers().map((teacher) => (
+                <tr 
+                  key={teacher._id} 
+                  className="hover:bg-blue-50 transition-colors duration-150"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
+                    {editingId === teacher._id ? (
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                        className="border rounded px-2 py-1 w-full"
+                      />
+                    ) : teacher.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {editingId === teacher._id ? (
+                      <input
+                        type="text"
+                        value={editForm.facultyId}
+                        onChange={(e) => setEditForm({...editForm, facultyId: e.target.value})}
+                        className="border rounded px-2 py-1 w-full"
+                      />
+                    ) : teacher.facultyId}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      teacher.role === 'teacher' ? 'bg-blue-100 text-blue-800' :
+                      teacher.role === 'student' ? 'bg-green-100 text-green-800' :
+                      teacher.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {teacher.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(teacher.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {editingId === teacher._id ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUpdate(teacher._id)}
+                          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs shadow-sm"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs shadow-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(teacher)}
+                          className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => openSubjectModal(teacher)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs shadow-sm"
+                        >
+                          View Subject
+                        </button>
+                        <button
+                          onClick={() => openStudentModal(teacher)}
+                          className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-xs shadow-sm"
+                        >
+                          View Students
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTeacherToDelete(teacher);
+                            setShowDeleteModal(true);
+                          }}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Subject View Modal */}
       {showSubjectModal && (
@@ -429,7 +581,10 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {teacherSubjects.map((subject) => (
-                      <tr key={subject._id}>
+                      <tr 
+                        key={subject._id}
+                        className="hover:bg-gray-50 transition-colors duration-150"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {editingSubjectId === subject._id ? (
                             <input
@@ -565,7 +720,10 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {teacherStudents.map((student) => (
-                      <tr key={student._id}>
+                      <tr 
+                        key={student._id}
+                        className="hover:bg-gray-50 transition-colors duration-150"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {student.firstName} {student.lastName}
                         </td>
