@@ -37,6 +37,9 @@ export default function AdminDashboard() {
   });
   // User role and permissions
   const [currentUser, setCurrentUser] = useState(null);
+  // Drag and drop states
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const fetchTeachers = async () => {
     try {
@@ -470,6 +473,80 @@ export default function AdminDashboard() {
     );
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedItem(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedItem === null) return;
+    
+    const newTeachers = [...sortedAndFilteredTeachers()];
+    const draggedTeacher = newTeachers[draggedItem];
+    
+    // Remove the dragged item
+    newTeachers.splice(draggedItem, 1);
+    // Insert it at the new position
+    newTeachers.splice(dropIndex, 0, draggedTeacher);
+    
+    // Update the teachers state (this would need to be saved to the backend)
+    setTeachers(newTeachers);
+    setDraggedItem(null);
+    setDragOverIndex(null);
+  };
+
+  // Auto-save functionality for drafts
+  const [drafts, setDrafts] = useState({});
+  const [autoSaveStatus, setAutoSaveStatus] = useState(''); // 'saving', 'saved', 'error'
+
+  // Function to save draft
+  const saveDraft = async (teacherId, field, value) => {
+    setAutoSaveStatus('saving');
+    try {
+      // In a real implementation, this would save to a drafts collection
+      setDrafts(prev => ({
+        ...prev,
+        [teacherId]: {
+          ...prev[teacherId],
+          [field]: value,
+          lastSaved: new Date()
+        }
+      }));
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setAutoSaveStatus('saved');
+      
+      // Clear status after 2 seconds
+      setTimeout(() => setAutoSaveStatus(''), 2000);
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      setAutoSaveStatus('error');
+      setTimeout(() => setAutoSaveStatus(''), 3000);
+    }
+  };
+
+  // Debounced draft saving
+  const debouncedSaveDraft = (() => {
+    let timeout;
+    return (teacherId, field, value) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => saveDraft(teacherId, field, value), 1000);
+    };
+  })();
+
   return (
     <AdminLayout>
       {/* Performance Indicators */}
@@ -477,6 +554,18 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-blue-500 transition-all duration-300 hover:shadow-xl">
           <div className="flex justify-between items-start">
             <div>
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  placeholder="Search total users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-4 py-1 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 absolute left-2 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <h3 className="text-lg font-semibold mb-2 text-blue-700">Total Users</h3>
               <p className="text-3xl font-bold text-blue-500">{performanceStats.totalUsers}</p>
             </div>
@@ -499,6 +588,18 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500 transition-all duration-300 hover:shadow-xl">
           <div className="flex justify-between items-start">
             <div>
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  placeholder="Search active teachers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-4 py-1 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 absolute left-2 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <h3 className="text-lg font-semibold mb-2 text-green-700">Active Teachers</h3>
               <p className="text-3xl font-bold text-green-500">{performanceStats.activeTeachers}</p>
             </div>
@@ -521,6 +622,18 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-purple-500 transition-all duration-300 hover:shadow-xl">
           <div className="flex justify-between items-start">
             <div>
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  placeholder="Search active students..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-4 py-1 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 absolute left-2 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <h3 className="text-lg font-semibold mb-2 text-purple-700">Active Students</h3>
               <p className="text-3xl font-bold text-purple-500">{performanceStats.activeStudents}</p>
             </div>
@@ -545,6 +658,18 @@ export default function AdminDashboard() {
         <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-orange-500 transition-all duration-300 hover:shadow-xl">
           <div className="flex justify-between items-start">
             <div>
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  placeholder="Search recent activity..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-4 py-1 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 absolute left-2 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <h3 className="text-lg font-semibold mb-2 text-orange-700">Recent Activity</h3>
               <p className="text-3xl font-bold text-orange-500">{performanceStats.recentActivity}</p>
             </div>
@@ -734,17 +859,25 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedAndFilteredTeachers().map((teacher) => (
+              {sortedAndFilteredTeachers().map((teacher, index) => (
                 <tr 
                   key={teacher._id} 
-                  className="hover:bg-blue-50 transition-colors duration-150"
+                  className={`hover:bg-blue-50 transition-colors duration-150 ${dragOverIndex === index ? 'bg-blue-100' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onDrop={(e) => handleDrop(e, index)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
                     {editingId === teacher._id ? (
                       <input
                         type="text"
                         value={editForm.name}
-                        onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                        onChange={(e) => {
+                          setEditForm({...editForm, name: e.target.value});
+                          debouncedSaveDraft(teacher._id, 'name', e.target.value);
+                        }}
                         className="border rounded px-2 py-1 w-full shadow-sm"
                       />
                     ) : teacher.name}
@@ -754,7 +887,10 @@ export default function AdminDashboard() {
                       <input
                         type="text"
                         value={editForm.facultyId}
-                        onChange={(e) => setEditForm({...editForm, facultyId: e.target.value})}
+                        onChange={(e) => {
+                          setEditForm({...editForm, facultyId: e.target.value});
+                          debouncedSaveDraft(teacher._id, 'facultyId', e.target.value);
+                        }}
                         className="border rounded px-2 py-1 w-full shadow-sm"
                       />
                     ) : teacher.facultyId}
@@ -780,6 +916,11 @@ export default function AdminDashboard() {
                         >
                           Cancel
                         </button>
+                        {autoSaveStatus && (
+                          <span className={`text-xs ${autoSaveStatus === 'saving' ? 'text-blue-500' : autoSaveStatus === 'saved' ? 'text-green-500' : 'text-red-500'}`}>
+                            {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Saved' : 'Error'}
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <div className="flex gap-2">
@@ -853,6 +994,22 @@ export default function AdminDashboard() {
               >
                 &times;
               </button>
+            </div>
+            
+            {/* Search bar for subjects */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search subjects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
             
             {loadingSubjects ? (
@@ -1002,6 +1159,22 @@ export default function AdminDashboard() {
               </button>
             </div>
             
+            {/* Search bar for students */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search students..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            
             {loadingStudents ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-700"></div>
@@ -1011,3 +1184,113 @@ export default function AdminDashboard() {
               <div className="text-center py-8">
                 <div className="text-gray-400 mb-2">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <p className="text-gray-600">No students enrolled in this teacher's subjects.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrolled Subjects</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {teacherStudents.map((student) => (
+                      <tr key={student._id} className="hover:bg-gray-50 transition-colors duration-150">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {student.firstName} {student.lastName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {student.studentId || student.facultyId || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {student.email || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {student.enrolledSubjects ? student.enrolledSubjects.length : 0} subjects
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowStudentModal(false)}
+                className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors shadow-md"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-md shadow-2xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete {teacherToDelete?.name}? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setTeacherToDelete(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(teacherToDelete._id)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Subject Delete Confirmation Modal */}
+      {showSubjectDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-md shadow-2xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete {subjectToDelete?.subjectName}? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowSubjectDeleteModal(false);
+                  setSubjectToDelete(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteSubject}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </AdminLayout>
+  );
+}
