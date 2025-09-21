@@ -40,6 +40,36 @@ export default function AdminDashboard() {
   // Drag and drop states
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [showDraftsModal, setShowDraftsModal] = useState(false);
+  const [grades, setGrades] = useState({});
+  const [activeTab, setActiveTab] = useState('drafts'); // 'drafts' or 'grades'
+
+  // Function to save grade
+  const saveGrade = async (studentId, subjectId, grade) => {
+    try {
+      // In a real implementation, this would save to a grades collection
+      setGrades(prev => ({
+        ...prev,
+        [`${studentId}-${subjectId}`]: {
+          grade,
+          lastSaved: new Date()
+        }
+      }));
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return { success: true };
+    } catch (error) {
+      console.error('Error saving grade:', error);
+      return { success: false, error };
+    }
+  };
+
+  // Function to load drafts
+  const loadDrafts = () => {
+    // In a real implementation, this would load from a drafts collection
+    return drafts;
+  };
 
   const fetchTeachers = async () => {
     try {
@@ -547,6 +577,25 @@ export default function AdminDashboard() {
     };
   })();
 
+  // Function to handle grade input change with auto-save
+  const handleGradeChange = async (studentId, subjectId, grade) => {
+    // Update local state immediately for responsive UI
+    setGrades(prev => ({
+      ...prev,
+      [`${studentId}-${subjectId}`]: {
+        grade,
+        lastSaved: new Date()
+      }
+    }));
+    
+    // Auto-save the grade
+    try {
+      await saveGrade(studentId, subjectId, grade);
+    } catch (error) {
+      console.error('Error auto-saving grade:', error);
+    }
+  };
+
   return (
     <AdminLayout>
       {/* Performance Indicators */}
@@ -571,7 +620,7 @@ export default function AdminDashboard() {
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 11-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
           </div>
@@ -696,6 +745,12 @@ export default function AdminDashboard() {
           
           {/* Filter Controls */}
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowDraftsModal(true)}
+              className="px-3 py-1 bg-yellow-500 text-white rounded-full text-xs font-medium hover:bg-yellow-600 transition-colors shadow-sm"
+            >
+              Drafts ({Object.keys(drafts).length})
+            </button>
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               className="px-3 py-1 bg-white text-blue-700 rounded-full text-xs font-medium hover:bg-blue-50 transition-colors shadow-sm"
@@ -980,6 +1035,183 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Drafts Modal */}
+      {showDraftsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Saved Drafts & Grades</h2>
+              <button
+                onClick={() => setShowDraftsModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="border-b border-gray-200 mb-4">
+              <nav className="flex space-x-8">
+                <button
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'drafts'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('drafts')}
+                >
+                  Drafts ({Object.keys(drafts).length})
+                </button>
+                <button
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'grades'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('grades')}
+                >
+                  Grades ({Object.keys(grades).length})
+                </button>
+              </nav>
+            </div>
+            
+            {activeTab === 'drafts' ? (
+              Object.keys(drafts).length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600">No drafts saved yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(drafts).map(([teacherId, draft]) => {
+                    const teacher = teachers.find(t => t._id === teacherId);
+                    return (
+                      <div key={teacherId} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium text-gray-900">{teacher?.name || 'Unknown Teacher'}</h3>
+                            <div className="mt-2 space-y-1">
+                              {Object.entries(draft).map(([field, value]) => (
+                                field !== 'lastSaved' && (
+                                  <div key={field} className="text-sm">
+                                    <span className="font-medium text-gray-700">{field}:</span>
+                                    <span className="text-gray-600 ml-2">{value}</span>
+                                  </div>
+                                )
+                              ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Last saved: {draft.lastSaved ? new Date(draft.lastSaved).toLocaleString() : 'Unknown'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                const teacher = teachers.find(t => t._id === teacherId);
+                                if (teacher) {
+                                  setEditingId(teacherId);
+                                  setEditForm({ name: teacher.name, facultyId: teacher.facultyId });
+                                  setShowDraftsModal(false);
+                                }
+                              }}
+                              className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                            >
+                              Apply
+                            </button>
+                            <button
+                              onClick={() => {
+                                const newDrafts = { ...drafts };
+                                delete newDrafts[teacherId];
+                                setDrafts(newDrafts);
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              Object.keys(grades).length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600">No grades saved yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(grades).map(([key, gradeData]) => {
+                    const [studentId, subjectId] = key.split('-');
+                    const student = teacherStudents.find(s => s._id === studentId);
+                    const teacher = teachers.find(t => t._id === subjectId);
+                    return (
+                      <div key={key} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium text-gray-900">
+                              {student ? `${student.firstName} ${student.lastName}` : 'Unknown Student'}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              Teacher: {teacher ? teacher.name : 'Unknown Teacher'}
+                            </p>
+                            <div className="mt-2">
+                              <span className="font-medium text-gray-700">Grade:</span>
+                              <span className="text-gray-600 ml-2">{gradeData.grade}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Last saved: {gradeData.lastSaved ? new Date(gradeData.lastSaved).toLocaleString() : 'Unknown'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                // Apply grade logic would go here
+                              }}
+                              className="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                            >
+                              Apply
+                            </button>
+                            <button
+                              onClick={() => {
+                                const newGrades = { ...grades };
+                                delete newGrades[key];
+                                setGrades(newGrades);
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs shadow-sm transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            )}
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowDraftsModal(false)}
+                className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors shadow-md"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Subject View Modal */}
       {showSubjectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1198,6 +1430,7 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrolled Subjects</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -1214,6 +1447,24 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {student.enrolledSubjects ? student.enrolledSubjects.length : 0} subjects
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              placeholder="Enter grade"
+                              value={grades[`${student._id}-${selectedTeacher?._id}`]?.grade || ''}
+                              onChange={(e) => handleGradeChange(student._id, selectedTeacher?._id, e.target.value)}
+                              className="border rounded px-2 py-1 w-20 shadow-sm"
+                            />
+                            {grades[`${student._id}-${selectedTeacher?._id}`] && (
+                              <span className="ml-2 text-xs text-green-600">
+                                Saved
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
