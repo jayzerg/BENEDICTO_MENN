@@ -225,7 +225,7 @@ export default function CreateExam() {
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                <p>No questions added yet. Click "Add Question" to get started.</p>
+                <p>No questions added yet. Click &apos;Add Question&apos; to get started.</p>
               </div>
             )}
           </div>

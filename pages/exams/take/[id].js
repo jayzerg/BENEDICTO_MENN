@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 
 export default function TakeExam() {
@@ -8,11 +8,29 @@ export default function TakeExam() {
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(0);
 
+  const fetchExam = useCallback(async () => {
+    const res = await fetch(`/api/exams/${id}`);
+    if (res.ok) {
+      const examData = await res.json();
+      setExam(examData);
+      setTimeLeft(examData.duration * 60);
+    }
+  }, [id]);
+
+  const submitExam = useCallback(async () => {
+    await fetch('/api/results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId: id, answers })
+    });
+    router.push('/results');
+  }, [id, answers, router]);
+
   useEffect(() => {
     if (id) {
       fetchExam();
     }
-  }, [id]);
+  }, [id, fetchExam]);
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -21,25 +39,7 @@ export default function TakeExam() {
     } else if (timeLeft === 0 && exam) {
       submitExam();
     }
-  }, [timeLeft]);
-
-  const fetchExam = async () => {
-    const res = await fetch(`/api/exams/${id}`);
-    if (res.ok) {
-      const examData = await res.json();
-      setExam(examData);
-      setTimeLeft(examData.duration * 60);
-    }
-  };
-
-  const submitExam = async () => {
-    await fetch('/api/results', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ examId: id, answers })
-    });
-    router.push('/results');
-  };
+  }, [timeLeft, exam, submitExam]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);

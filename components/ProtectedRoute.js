@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 
 export default function ProtectedRoute({ children, adminOnly = false, teacherOnly = false }) {
@@ -6,11 +6,7 @@ export default function ProtectedRoute({ children, adminOnly = false, teacherOnl
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me');
       if (res.ok) {
@@ -37,7 +33,11 @@ export default function ProtectedRoute({ children, adminOnly = false, teacherOnl
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminOnly, teacherOnly, router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   if (loading) {
     return (
