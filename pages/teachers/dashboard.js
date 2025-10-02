@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import TeacherLayout from '../../components/TeacherLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import Link from 'next/link';
@@ -48,19 +48,7 @@ export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSubject, setSelectedSubject] = useState(null);
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchSubjects();
-      fetchExams();
-      fetchStudents();
-    }
-  }, [user]);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/me');
       if (res.ok) {
@@ -75,9 +63,10 @@ export default function TeacherDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
+    if (!user) return;
     try {
       const res = await fetch(`/api/subjects?facultyId=${user.facultyId}`);
       if (res.ok) {
@@ -90,9 +79,9 @@ export default function TeacherDashboard() {
       console.error('Error fetching subjects:', error);
       setError('Error fetching subjects');
     }
-  };
+  }, [user]);
 
-  const fetchExams = async () => {
+  const fetchExams = useCallback(async () => {
     try {
       const res = await fetch('/api/exams');
       if (res.ok) {
@@ -105,9 +94,9 @@ export default function TeacherDashboard() {
       console.error('Error fetching exams:', error);
       setError('Error fetching exams');
     }
-  };
+  }, []);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const res = await fetch('/api/students');
       if (res.ok) {
@@ -120,7 +109,19 @@ export default function TeacherDashboard() {
       console.error('Error fetching students:', error);
       setError('Error fetching students');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  useEffect(() => {
+    if (user) {
+      fetchSubjects();
+      fetchExams();
+      fetchStudents();
+    }
+  }, [user, fetchSubjects, fetchExams, fetchStudents]);
 
   const getExamsForSubject = (subjectId) => {
     return exams.filter(exam => exam.subject && exam.subject._id === subjectId);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 
 // Function to generate a unique color based on a string
 const stringToColor = (str) => {
@@ -115,7 +116,7 @@ export default function TeacherLayout({ children }) {
       <nav className={`${darkMode ? 'bg-gradient-to-r from-blue-800 to-orange-800 border-gray-700' : 'bg-gradient-to-r from-blue-600 to-orange-500'} shadow-sm border-b h-16 fixed w-full top-0 z-10`}>
         <div className="flex items-center justify-between h-full px-6">
           <div className="flex items-center space-x-3">
-            <img src="/BCLOGO.png" alt="BC Logo" className="h-16 w-16 relative z-20" />
+            <Image src="/BCLOGO.png" alt="BC Logo" width={64} height={64} className="relative z-20" />
             <h1 className="text-xl font-bold text-white">Teacher Dashboard</h1>
           </div>
           
@@ -123,15 +124,16 @@ export default function TeacherLayout({ children }) {
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full text-white flex items-center justify-center hover:bg-white/30 transition-colors overflow-hidden"
+                className="relative w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full text-white flex items-center justify-center hover:bg-white/30 transition-colors overflow-hidden"
               >
                 {profileImage ? (
-                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  <Image src={profileImage} alt="Profile" layout="fill" objectFit="cover" />
                 ) : currentUser ? (
-                  <img 
+                  <Image
                     src={generateAvatar(currentUser.name, currentUser.facultyId)} 
                     alt="Profile" 
-                    className="w-full h-full object-cover" 
+                    layout="fill"
+                    objectFit="cover"
                   />
                 ) : (
                   <span className="text-white font-bold">T</span>
@@ -182,14 +184,15 @@ export default function TeacherLayout({ children }) {
               <div>
                 <label className="block text-sm font-medium mb-2">Profile Picture</label>
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                  <div className="relative w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
                     {profileImage ? (
-                      <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                      <Image src={profileImage} alt="Profile" layout="fill" objectFit="cover" />
                     ) : currentUser ? (
-                      <img 
+                      <Image
                         src={generateAvatar(currentUser.name, currentUser.facultyId)} 
                         alt="Profile" 
-                        className="w-full h-full object-cover" 
+                        layout="fill"
+                        objectFit="cover"
                       />
                     ) : (
                       <span className="text-gray-600">T</span>

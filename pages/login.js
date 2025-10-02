@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: '', password: '', role: 'student', adminCode: '' });
@@ -114,10 +115,12 @@ export default function Login() {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="bg-white rounded-2xl shadow-lg p-2 inline-block mb-4 border border-blue-100">
-            <img 
+            <Image
               src="/BCLOGO.png" 
               alt="Benedicto College Logo" 
-              className="h-16 w-16 mx-auto"
+              width={64}
+              height={64}
+              className="mx-auto"
               onError={(e) => {
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'block';

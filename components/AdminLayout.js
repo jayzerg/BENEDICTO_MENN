@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import React from 'react';
+import Image from 'next/image';
 
 // Function to generate a unique color based on a string
 const stringToColor = (str) => {
@@ -164,7 +165,7 @@ export default function AdminLayout({ children }) {
       <nav className={`${darkMode ? 'bg-gradient-to-r from-blue-900 to-orange-700 border-gray-700' : 'bg-gradient-to-r from-blue-700 to-orange-500'} shadow-lg border-b h-16 fixed w-full top-0 z-10`}>
         <div className="flex items-center justify-between h-full px-6">
           <div className="flex items-center space-x-3">
-            <img src="/BCLOGO.png" alt="BC Logo" className="h-16 w-16 relative z-20" />
+            <Image src="/BCLOGO.png" alt="BC Logo" width={64} height={64} className="relative z-20" />
             <div>
               <h1 className="text-xl font-bold text-white">Benedicto College</h1>
               <p className="text-xs text-white/80">Admin Dashboard</p>
@@ -178,9 +179,9 @@ export default function AdminLayout({ children }) {
                 className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full text-white flex items-center justify-center hover:bg-white/30 transition-all duration-200 overflow-hidden border border-white/20"
               >
                 {profileImage ? (
-                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  <Image src={profileImage} alt="Profile" layout="fill" objectFit="cover" />
                 ) : (
-                  <img src={generateAvatar("Administrator")} alt="Profile" className="w-full h-full object-cover" />
+                  <Image src={generateAvatar("Administrator")} alt="Profile" layout="fill" objectFit="cover" />
                 )}
               </button>
               
@@ -239,11 +240,11 @@ export default function AdminLayout({ children }) {
               <div>
                 <label className="block text-sm font-medium mb-2">Profile Picture</label>
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden relative">
                     {profileImage ? (
-                      <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                      <Image src={profileImage} alt="Profile" layout="fill" objectFit="cover" />
                     ) : (
-                      <img src={generateAvatar("Administrator")} alt="Profile" className="w-full h-full object-cover" />
+                      <Image src={generateAvatar("Administrator")} alt="Profile" layout="fill" objectFit="cover" />
                     )}
                   </div>
                   <div className="flex-1">
