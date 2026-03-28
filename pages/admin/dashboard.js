@@ -51,9 +51,6 @@ export default function AdminDashboard() {
 
   const handleAddUser = async () => {
     try {
-      // Determine correct role based on what tab is active on the main page...
-      // but draftsModalTab isn't used for the main list of teachers, wait, let's see.
-      // We will set the role in newUser state.
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,7 +59,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         setAddModalOpen(false);
         setNewUser({ name: '', email: '', password: '', facultyId: '', role: 'teacher' });
-        fetchTeachers();
+        fetchAllUsers();
       } else {
         const errorData = await response.json();
         alert(`Error adding user: ${errorData.message}`);
