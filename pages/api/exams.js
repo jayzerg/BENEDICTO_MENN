@@ -3,6 +3,11 @@ import Exam from '../../models/Exam';
 import Subject from '../../models/Subject';
 import User from '../../models/User';
 
+// Cache for exams to reduce database queries
+let examsCache = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 30000; // 30 seconds cache
+
 export default async function handler(req, res) {
   const { method } = req;
 
@@ -11,12 +16,21 @@ export default async function handler(req, res) {
   switch (method) {
     case 'GET':
       try {
-        const exams = await Exam.find({}).populate('createdBy', 'firstName lastName facultyId').populate('subject');
-        console.log('Exams fetched with populated data:', exams);
-        // Log details about subject population
-        exams.forEach(exam => {
-          console.log(`Exam: ${exam.title}, Subject:`, exam.subject);
-        });
+        // Check cache validity
+        const now = Date.now();
+        if (examsCache && (now - cacheTimestamp) < CACHE_TTL) {
+          return res.status(200).json(examsCache);
+        }
+        
+        const exams = await Exam.find({})
+          .select('title instructions duration surveillance status isActive createdAt updatedAt')
+          .populate('createdBy', 'firstName lastName facultyId')
+          .populate('subject', 'name code');
+        
+        // Update cache
+        examsCache = exams;
+        cacheTimestamp = now;
+        
         res.status(200).json(exams);
       } catch (error) {
         console.error('Error fetching exams:', error);
@@ -90,24 +104,18 @@ export default async function handler(req, res) {
         }
         console.log('Creator exists validation passed');
         
-        console.log('Creating exam with data:', examData);
-        
         const exam = await Exam.create(examData);
-        console.log('Exam created:', exam);
         
-        // Verify the status is set correctly
-        console.log('Created exam status:', exam.status);
-        
+        // Invalidate cache when exam is created
+        examsCache = null;
+        cacheTimestamp = 0;
+
         // Populate the subject and creator details
         const populatedExam = await Exam.findById(exam._id)
+          .select('title instructions duration surveillance status isActive createdAt updatedAt')
           .populate('createdBy', 'firstName lastName facultyId')
-          .populate('subject');
-        console.log('Populated exam:', populatedExam);
-        
-        // Log the subject data specifically
-        console.log('Exam subject data:', populatedExam.subject);
-        console.log('Exam subject type:', typeof populatedExam.subject);
-          
+          .populate('subject', 'name code');
+
         res.status(201).json(populatedExam);
       } catch (error) {
         console.error('Error creating exam:', error);
@@ -145,11 +153,17 @@ export default async function handler(req, res) {
           });
         }
         
+        // Invalidate cache when exam is updated
+        examsCache = null;
+        cacheTimestamp = 0;
+        
         const exam = await Exam.findByIdAndUpdate(id, updateData, {
           new: true,
           runValidators: true
-        }).populate('createdBy', 'firstName lastName facultyId')
-          .populate('subject');
+        })
+          .select('title instructions duration surveillance status isActive createdAt updatedAt')
+          .populate('createdBy', 'firstName lastName facultyId')
+          .populate('subject', 'name code');
         
         if (!exam) {
           return res.status(404).json({ message: 'Exam not found' });
@@ -177,6 +191,10 @@ export default async function handler(req, res) {
         }
         
         const exam = await Exam.findByIdAndDelete(examId);
+        
+        // Invalidate cache when exam is deleted
+        examsCache = null;
+        cacheTimestamp = 0;
         
         if (!exam) {
           return res.status(404).json({ message: 'Exam not found' });
